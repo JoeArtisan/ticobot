@@ -30,14 +30,9 @@ class Fibonacci:
         c2 = self.candles['close'][-2]
         c1 = self.candles['close'][-1]
 
-        if self.trend == 'call':
-            lvl15,lvl23,lvl38,lvl50,lvl61,lvl88 = self.getLevels(price_max, diff)
-        elif self.trend == 'put':
-            lvl15,lvl23,lvl38,lvl50,lvl61,lvl88 = self.getLevels(price_min, diff)
-        else:
-            return price_max,price_min,0,0,0,c1,c2,c3
+        lvl15,lvl23,lvl38,lvl50,lvl61,lvl88 = self.getLevels(price_max, diff)
 
-        return price_max,price_min,lvl23,lvl38,lvl61,c1,c2,c3
+        return price_max,price_min,lvl38,lvl61,c1,c2,c3
 
     
     def hasCrossedLevel(self,lvl,c1,c2,c3)-> bool:
@@ -46,21 +41,19 @@ class Fibonacci:
         return True if isCrossed else False
    
     def getSignal(self) -> str:
-        price_max,price_min,level1,level2,level3,c1,c2,c3 = self.prepare()
+        price_max,price_min,level38,level61,c1,c2,c3 = self.prepare()
 
-        lvl0 = self.hasCrossedLevel(price_min,c1,c2,c3)
-        lvl1 = self.hasCrossedLevel(level1,c1,c2,c3)
-        lvl3 = self.hasCrossedLevel(level3,c1,c2,c3)
-        lvl4 = self.hasCrossedLevel(price_max,c1,c2,c3)
+        lvl38 = self.hasCrossedLevel(level38,c1,c2,c3)
+        lvl61 = self.hasCrossedLevel(level61,c1,c2,c3)
 
-        table = [[c2,c1,price_min,price_max,level1,level3,lvl0,lvl1,lvl3,lvl4]]
-        headers = ["Anterior","Actual","Mínimo","Máximo","Lvl#1","Lvl#3","Cruzo Min","Cruzo Lvl#1","Cruzo Lvl#3","Cruzo Max"]
+        headers = ["ANT","ACT","MIN","MAX","LVL38","LVL61","ZLVL38","ZLVL61"]
+        table = [[c2,c1,price_min,price_max,level38,level61,lvl38,lvl61]]
         print(tbl(table, headers, tablefmt="plain"))
-        
+
         if self.trend == 'call':
-            signal = 'call' if lvl1 else 'put' if lvl3 else 'ntr'
+            signal = 'call' if lvl38 else 'ntr'
         elif self.trend == 'put':
-            signal = 'put' if lvl1 else 'call' if lvl3 else 'ntr'
+            signal = 'put' if lvl61 else 'ntr'
         else:
             signal = 'ntr'
             
