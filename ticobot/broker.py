@@ -3,7 +3,6 @@ from iqoptionapi.stable_api import IQ_Option as IQ
 from ticobot.shopping.binary import BuyBinary
 from ticobot.shopping.digital import BuyDigital
 import numpy as np
-from datetime import datetime
 
 class Broker:
   def __init__(self,email,passwd,mode):
@@ -12,7 +11,7 @@ class Broker:
     self.api = None
     self.mode = mode
     
-  def connect(self) -> None:
+  def connect(self):
     self.api = IQ(self.email,self.passwd)
     header = {"User-Agent":r"Mozilla/12.0 (X12; Linux x64; rv:70.0) Gecko/20100101 Firefox/666.0"}
     cookie = {"api":"GOOD"}
@@ -24,44 +23,30 @@ class Broker:
     self.api.start_candles_stream(asset,size,period)
     data = self.api.get_realtime_candles(asset,size)
     self.api.stop_candles_stream(asset,size)
-    return data
+    return self.prepareData(data)
   
   def prepareData(self,candles):
-    data = { 'open': np.array([]), 'high': np.array([]), 'low': np.array([]), 'close': np.array([]), 'volume': np.array([]), 'date': np.array([]) }
+    data = {'open': np.array([]), 'high': np.array([]), 'low': np.array([]), 'close': np.array([]), 'volume': np.array([])}
     for i in candles:
-      data["open"] = np.append(data["open"],candles[i]["open"] )
-      data["high"] = np.append(data["high"],candles[i]["max"] )
-      data["low"] = np.append(data["low"],candles[i]["min"] )
-      data["close"] = np.append(data["close"],candles[i]["close"] )
-      data["volume"] = np.append(data["volume"],candles[i]["volume"] )
-      data["date"] = np.append(data["date"],candles[i]["at"] )
+      data["open"] = np.append(data["open"],candles[i]["open"])
+      data["high"] = np.append(data["high"],candles[i]["max"])
+      data["low"] = np.append(data["low"],candles[i]["min"])
+      data["close"] = np.append(data["close"],candles[i]["close"])
+      data["volume"] = np.append(data["volume"],candles[i]["volume"])
     return data
-  
-  def prepareDataCsv(self,candles):
-      data = { 'Open': np.array([]), 'High': np.array([]), 'Low': np.array([]), 'Close': np.array([]), 'Volume': np.array([])}
-      for i in candles:
-        data["Open"] = np.append(data["Open"],candles[i]["open"])
-        data["High"] = np.append(data["High"],candles[i]["max"])
-        data["Low"] = np.append(data["Low"],candles[i]["min"])
-        data["Close"] = np.append(data["Close"],candles[i]["close"])
-        data["Volume"] = np.append(data["Volume"],candles[i]["volume"])
-      return data
-  
-  def buyDigital(self,signal,bet,asset,expiration,result) -> None:
-    buy = BuyDigital(self.api,signal,bet,asset,expiration,result)
-    buy.start()
-    buy.join
-
-  def buyBinary(self,signal,bet,asset,expiration,result) -> None:
-    buy = BuyBinary(self.api,signal,bet,asset,expiration,result)
-    buy.start()
-    buy.join
-  
-  def getTrustSignal(self,asset) -> str:
     
-    self.api.start_mood_stream(asset)
-    mood = self.api.get_traders_mood(asset)
-    self.api.stop_mood_stream(asset)
-    mood = round(float(mood * 100),2)
+  def buyDigital(self,packet):
+    buy = BuyDigital(self.api,packet)
+    buy.start()
+    buy.join
 
-    return 'call' if mood >= 90 else 'put' if mood <= 10 else 'ntr'
+  def buyBinary(self,packet):
+    buy = BuyBinary(self.api,packet)
+    buy.start()
+    buy.join
+  
+  def buy(self,packet):        
+    if packet[0] == 'digital':
+        self.buyDigital(packet)
+    elif packet[0] == 'binary':
+        self.buyBinary(packet)
